@@ -1,0 +1,29 @@
+name: Update luck report
+on:
+  schedule:
+    - cron: "0 10 * * 1"   # Mondays 10:00 UTC
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Pull ESPN data and rebuild page
+        env:
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+          SWID: ${{ secrets.SWID }}
+          LEAGUE_ID: ${{ secrets.LEAGUE_ID }}
+        run: python ingest.py && python metrics.py && python build.py
+      - name: Commit updated page
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html data.json
+          git diff --cached --quiet || git commit -m "Weekly update"
+          git push

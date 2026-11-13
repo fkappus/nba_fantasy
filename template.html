@@ -1,0 +1,249 @@
+<title>NBA Europe Luck Report</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one centred column of stacked "quarters"; each section = scoreboard-style header + one chart. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#10182b; --muted:#566178; --line:#d8dde6; --mid:#e7eaef;
+  --warm:#e2622b; --cool:#2a78d6; --seq:#3d4f7a;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif; --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0d121e; --panel:#161d2d; --ink:#eef1f7; --muted:#9ba6bc; --line:#2a3349; --mid:#252d40;
+  --warm:#f07d48; --cool:#4d96ec; --seq:#8fa3d6; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0d121e; --panel:#161d2d; --ink:#eef1f7; --muted:#9ba6bc; --line:#2a3349; --mid:#252d40;
+  --warm:#f07d48; --cool:#4d96ec; --seq:#8fa3d6; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:920px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.02}
+h1{font-size:clamp(44px,9vw,84px);font-weight:800;text-transform:uppercase;letter-spacing:-.01em}
+h2{font-size:clamp(30px,5vw,42px);font-weight:700;text-transform:uppercase}
+h3{font-size:22px;font-weight:700}
+p{margin:0;max-width:65ch}
+.num{font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.hero{display:flex;flex-direction:column;gap:18px}
+.hero h1 em{font-style:normal;color:var(--warm)}
+.toggle{display:inline-flex;border:1.5px solid var(--ink);border-radius:999px;padding:3px;gap:3px;align-self:flex-start}
+.toggle button{font:600 15px var(--body);color:var(--ink);background:none;border:0;border-radius:999px;padding:7px 16px;cursor:pointer}
+.toggle button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.toggle button:focus-visible,[data-tip]:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
+.headline{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.hl{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.hl .big{font-family:var(--display);font-weight:800;font-size:54px;line-height:1}
+.hl .who{font-weight:600}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.sec{display:flex;flex-direction:column;gap:16px}
+.sec>header{display:flex;flex-direction:column;gap:8px;border-top:3px solid var(--ink);padding-top:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
+.scroll{overflow-x:auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center}
+/* slope */
+.slope{display:grid;grid-template-columns:minmax(0,1fr) clamp(44px,12vw,120px) minmax(0,1fr)}
+.slope .col{display:flex;flex-direction:column}
+.slope .hd{height:28px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.slope .col.r .hd{text-align:right}
+.srow{height:40px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);min-width:0;font-size:15px}
+.srow .rk{font-family:var(--display);font-weight:700;font-size:20px;width:22px;flex:none;color:var(--muted)}
+.srow .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.srow .rc{flex:none;color:var(--muted);font-size:14px}
+.col.r .srow{flex-direction:row-reverse}.col.r .nm{text-align:right}
+.slope svg{width:100%;margin-top:28px;display:block;overflow:visible}
+.slope path{fill:none;stroke-width:2.5;stroke-linecap:round;vector-effect:non-scaling-stroke;stroke-dasharray:1;stroke-dashoffset:0}
+/* luck bars */
+.lrow{display:grid;grid-template-columns:minmax(0,34%) 1fr;gap:10px;align-items:center;height:34px;font-size:15px}
+.lrow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.track{position:relative;height:22px}
+.track::before{content:"";position:absolute;left:50%;top:-6px;bottom:-6px;width:1px;background:var(--line)}
+.bar{position:absolute;top:0;height:22px;min-width:2px}
+.bar.pos{left:50%;background:var(--warm);border-radius:0 4px 4px 0;transform-origin:left}
+.bar.neg{right:50%;background:var(--cool);border-radius:4px 0 0 4px;transform-origin:right}
+.bval{position:absolute;top:0;line-height:22px;font-size:14px;font-weight:600;padding:0 6px;white-space:nowrap}
+.axis{display:grid;grid-template-columns:minmax(0,34%) 1fr;gap:10px;font-size:13px;color:var(--muted)}
+.axis div:last-child{display:flex;justify-content:space-between}
+/* tables */
+table{border-collapse:separate;border-spacing:2px;font-size:14px;width:100%}
+th{font-weight:600;color:var(--muted);font-size:12px;padding:2px 4px;white-space:nowrap}
+tbody th{text-align:left;max-width:150px;overflow:hidden;text-overflow:ellipsis;font-size:14px;color:var(--ink);font-weight:500;padding-right:8px}
+td{text-align:center;min-width:34px;height:34px;border-radius:3px;cursor:default;position:relative;font-weight:600;color:var(--ink)}
+td.diag{box-shadow:inset 0 0 0 2px var(--ink)}
+td.gift{box-shadow:inset 0 0 0 2px var(--warm)}td.rob{box-shadow:inset 0 0 0 2px var(--cool)}
+td small{display:block;font-size:10px;font-weight:600;color:var(--muted);line-height:1;margin-top:-2px}
+.detail{min-height:24px;font-size:15px;margin-top:10px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px}
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.calls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.call{display:flex;flex-direction:column;gap:2px;padding:10px 12px;font-size:14px;line-height:1.35}
+.call .hd{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--display);font-weight:700;font-size:20px}
+.call .hd span:first-child{font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.team{display:flex;flex-direction:column;gap:12px}
+.team .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.chip{font-size:13px;font-weight:600;border:1.5px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap;display:inline-flex;align-items:center}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:13px;color:var(--muted)}
+.kv b{display:block;font-family:var(--display);font-size:24px;line-height:1.1;color:var(--ink)}
+.dna{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;align-items:end;height:106px;position:relative}
+.dna::after{content:"";position:absolute;left:0;right:0;bottom:calc(18px + 33px);border-top:1px dashed var(--line)}
+.dna div{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px;font-size:10px;color:var(--muted);font-weight:600}
+.dna b{font-family:var(--display);font-size:15px;line-height:1;color:var(--muted);font-weight:700}
+.dna b.top{color:var(--ink)}
+.dna i{display:block;width:100%;max-width:18px;background:var(--seq);border-radius:3px 3px 0 0;transform-origin:bottom;min-height:2px}
+.note{font-size:14px;color:var(--muted)}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--bg);font-size:13px;line-height:1.35;padding:7px 10px;border-radius:5px;max-width:240px}
+footer{border-top:1px solid var(--line);padding-top:16px;font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes growx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growy{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){
+  .reveal.in{animation:rise .6s cubic-bezier(.2,.7,.2,1) both}
+  .in .bar{animation:growx .9s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i)*45ms + .15s)}
+  .in .bval{animation:rise .5s both;animation-delay:calc(var(--i)*45ms + .7s)}
+  .in .slope path{animation:draw 1s ease-out both;animation-delay:calc(var(--i)*60ms + .2s)}
+  .in td{animation:pop .35s both;animation-delay:calc(var(--i)*6ms + .1s)}
+  .in .dna i{animation:growy .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i)*50ms + .2s)}
+  .cards .reveal.in,.calls .reveal.in{animation-delay:calc(var(--i)*70ms)}
+}
+@media (max-width:520px){ .lrow,.axis{grid-template-columns:minmax(0,38%) 1fr} .srow .rc{font-size:12px} .srow{font-size:14px;gap:5px} }
+</style>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1>Who earned it.<br>Who got <em>the schedule</em>.</h1>
+    <p>Every week you only play one team. This page replays each week against <b>all eleven</b> others, so you can see who was good and who was just pointed at the right opponent.</p>
+    <div class="toggle" role="group" aria-label="Season" id="toggle"></div>
+    <div class="headline" id="headline"></div>
+  </section>
+
+  <section class="sec reveal" id="s-stand">
+    <header><h2>Real table vs deserved table</h2>
+      <p class="muted">Left: the actual standings. Right: ranked by expected wins, the wins an average schedule would have given. Lines show who moves.</p></header>
+    <div class="panel"><div class="slope" id="slope"></div></div>
+    <div class="legend"><span><i class="dot" style="background:var(--warm)"></i>ranked higher than deserved</span><span><i class="dot" style="background:var(--cool)"></i>ranked lower than deserved</span></div>
+  </section>
+
+  <section class="sec reveal" id="s-luck">
+    <header><h2>The luck meter</h2>
+      <p class="muted">Actual wins minus expected wins. A tie counts as half a win.</p></header>
+    <div class="panel"><div id="luck"></div></div>
+  </section>
+
+  <section class="sec reveal" id="s-weeks">
+    <header><h2>Week by week</h2>
+      <p class="muted">The number is how many of the other 11 teams you would have beaten that week. The letter is what actually happened.</p></header>
+    <div class="panel"><div class="scroll"><table id="weeks"></table></div></div>
+    <div class="legend"><span><i class="sw" style="box-shadow:inset 0 0 0 2px var(--warm)"></i>won a week most teams would have beaten you</span><span><i class="sw" style="box-shadow:inset 0 0 0 2px var(--cool)"></i>lost a week you'd have beaten most teams</span></div>
+  </section>
+
+  <section class="sec" id="s-close">
+    <header class="reveal"><h2>Decided by a whisker</h2>
+      <p class="muted">Matchups where a single category, won by almost nothing, settled the week.</p></header>
+    <div class="calls" id="close"></div>
+  </section>
+
+  <section class="sec" id="s-teams">
+    <header class="reveal"><h2>Team cards</h2>
+      <p class="muted">The number above each bar is the team's league rank in that category (1 is best). Bar height is how often they would win it against the whole league. The dashed line is 50%.</p></header>
+    <div class="cards" id="teams"></div>
+  </section>
+
+  <footer>
+    <span>For fun, not proof. A season is a small sample and luck evens out slowly.</span>
+    <span id="foot"></span>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const DATA=__DATA__;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const f1=x=>(Math.round(x*10)/10).toFixed(1).replace(/\.0$/,'');
+const sgn=x=>(x>0?'+':x<0?'−':'')+f1(Math.abs(x));
+const rec=t=>t.w+'-'+t.l+(t.t?'-'+t.t:'');
+let cur='2027';
+try{const s=localStorage.getItem('season'); if(s&&DATA.seasons[s]) cur=s;}catch(e){}
+
+function render(){
+  const S=DATA.seasons[cur], T=S.teams, byId=Object.fromEntries(T.map(t=>[t.id,t])), n=S.weeks.length;
+  $('eyebrow').textContent=DATA.league+' · Luck Report · '+S.label;
+  $('toggle').innerHTML=Object.keys(DATA.seasons).sort().reverse().map(k=>`<button type="button" id="tg-${k}" data-k="${k}" aria-pressed="${k===cur}">${DATA.seasons[k].label}</button>`).join('');
+  $('foot').textContent=`${S.label} regular season, weeks ${S.weeks[0]}–${S.weeks[n-1]} of ${S.regWeeks}. Source: ESPN league data. Updated ${DATA.updated}.`;
+
+  const byLuck=[...T].sort((a,b)=>b.luck-a.luck), top=byLuck[0], bot=byLuck[byLuck.length-1], best=[...T].sort((a,b)=>b.appct-a.appct)[0];
+  $('headline').innerHTML=
+    `<div class="hl"><span class="eyebrow">Luckiest</span><span class="big num">${sgn(top.luck)}</span><span class="who">${esc(top.name)}</span><span class="muted">${rec(top)} on the table, ${f1(top.xw)} wins deserved</span></div>`+
+    `<div class="hl"><span class="eyebrow">Unluckiest</span><span class="big num">${sgn(bot.luck)}</span><span class="who">${esc(bot.name)}</span><span class="muted">${rec(bot)} on the table, ${f1(bot.xw)} wins deserved</span></div>`+
+    `<div class="hl"><span class="eyebrow">Best team, schedule aside</span><span class="big num">${Math.round(best.appct*100)}%</span><span class="who">${esc(best.name)}</span><span class="muted">beat ${best.apw} of ${best.apw+best.apl+best.apt} possible opponents</span></div>`;
+
+  // standings slope
+  const act=[...T].sort((a,b)=>b.wins-a.wins||b.appct-a.appct), exp=[...T].sort((a,b)=>b.xw-a.xw);
+  const H=40, N=T.length;
+  const paths=act.map((t,i)=>{const j=exp.indexOf(t), y1=i*H+H/2, y2=j*H+H/2;
+    const col=j>i?'var(--warm)':j<i?'var(--cool)':'var(--line)';
+    return `<path pathLength="1" style="--i:${i};stroke:${col}" d="M0 ${y1} C 50 ${y1}, 50 ${y2}, 100 ${y2}"/>`}).join('');
+  $('slope').innerHTML=
+    `<div class="col"><div class="hd">Actual</div>${act.map((t,i)=>`<div class="srow"><span class="rk num">${i+1}</span><span class="nm">${esc(t.name)}</span><span class="rc num">${rec(t)}</span></div>`).join('')}</div>`+
+    `<svg viewBox="0 0 100 ${N*H}" height="${N*H}" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>`+
+    `<div class="col r"><div class="hd">Deserved</div>${exp.map((t,i)=>`<div class="srow"><span class="rk num" style="text-align:right">${i+1}</span><span class="nm">${esc(t.name)}</span><span class="rc num">${f1(t.xw)} xW</span></div>`).join('')}</div>`;
+
+  // luck bars
+  const mx=Math.max(...T.map(t=>Math.abs(t.luck)),0.5)*1.25;
+  $('luck').innerHTML=byLuck.map((t,i)=>{const w=Math.abs(t.luck)/mx*50, pos=t.luck>=0;
+    const lab=pos?`left:calc(50% + ${w}%)`:`right:calc(50% + ${w}%)`;
+    return `<div class="lrow" tabindex="0" data-tip="${esc(t.name)}: ${rec(t)} actual, ${f1(t.xw)} expected wins"><span class="nm">${esc(t.name)}</span><div class="track"><div class="bar ${pos?'pos':'neg'}" style="--i:${i};width:${w}%"></div><span class="bval num" style="--i:${i};${lab}">${sgn(t.luck)}</span></div></div>`}).join('')+
+    `<div class="axis"><span></span><div><span>← unlucky</span><span>lucky →</span></div></div>`;
+
+  let k=0;
+  // weeks grid
+  k=0;
+  $('weeks').innerHTML=`<thead><tr><th></th>${S.weeks.map(w=>`<th>W${w}</th>`).join('')}</tr></thead><tbody>`+
+    act.map(t=>`<tr><th title="${esc(t.name)}">${esc(t.name)}</th>${t.weeks.map(x=>{const p=(x.aw+.5*x.at)/11, r=x.r===1?'W':x.r===0?'L':'T';
+      const cls=x.r===1&&p<.4?' gift':x.r===0&&p>.6?' rob':'';
+      const sc=x.cw+'-'+x.cl+(x.ct?'-'+x.ct:'');
+      return `<td class="num${cls}" tabindex="0" style="--i:${k++};background:color-mix(in srgb, var(--seq) ${Math.round(4+p*46)}%, var(--panel))" data-tip="Week ${x.wk}: ${r==='W'?'beat':r==='L'?'lost to':'tied'} ${esc(byId[x.opp].name)} ${sc}. Would have beaten ${x.aw} of 11 teams.">${x.aw}<small>${r}</small></td>`}).join('')}</tr>`).join('')+`</tbody>`;
+
+  // close calls
+  const fmt=(c,v)=>c.endsWith('%')?(v*100).toFixed(1)+'%':String(v);
+  $('close').innerHTML=S.close.slice(0,6).map((c,i)=>{let a=fmt(c.cat,c.a), b=fmt(c.cat,c.b); if(a===b){a=(c.a*100).toFixed(2)+'%';b=(c.b*100).toFixed(2)+'%'}
+    return `<div class="panel call reveal" style="--i:${i%4}"><div class="hd"><span>Week ${c.wk}</span><span class="num">${c.score}</span></div>
+      <span><b>${esc(byId[c.win].name)}</b> over ${esc(byId[c.lose].name)}</span>
+      <span class="muted"><b style="color:var(--ink)">${c.cat}</b> <span class="num">${a} to ${b}</span>. Flip it: ${c.flip}.</span></div>`}).join('')
+    || '<p class="muted">No one-category matchups yet.</p>';
+
+  // team cards
+  const rank={}; S.cats.forEach(c=>{const o=[...T].sort((a,b)=>b.cat[c]-a.cat[c]); rank[c]={}; o.forEach((t,i)=>{rank[c][t.id]=(i>0&&o[i-1].cat[c]===t.cat[c])?rank[c][o[i-1].id]:i+1})});
+  $('teams').innerHTML=act.map((t,i)=>{const ws=[...t.weeks].sort((a,b)=>b.aw-a.aw), bw=ws[0], ww=ws[ws.length-1];
+    const col=t.luck>0.05?'var(--warm)':t.luck<-0.05?'var(--cool)':'var(--muted)';
+    return `<div class="panel team reveal" style="--i:${i%3}"><div class="top"><h3>${esc(t.name)}</h3><span class="chip num"><i class="dot" style="background:${col}"></i>luck ${sgn(t.luck)}</span></div>
+      <div class="kv"><span><b class="num">${rec(t)}</b>record</span><span><b class="num">${f1(t.xw)}</b>expected wins</span><span><b class="num">${Math.round(t.oppStr*100)}%</b>opponent strength</span></div>
+      <div class="dna">${S.cats.map((c,j)=>{const r=rank[c][t.id]; return `<div tabindex="0" data-tip="${c}: ranked ${r} of ${T.length}. Would win it vs ${Math.round(t.cat[c]*100)}% of the league; won it in ${Math.round(t.catActual[c]*100)}% of real matchups"><b class="num${r<=3?' top':''}">${r}</b><i style="--i:${j};height:${Math.max(2,Math.round(t.cat[c]*66))}px"></i>${c}</div>`}).join('')}</div>
+      <span class="note">Best week: W${bw.wk} (beat ${bw.aw} of 11). Worst: W${ww.wk} (beat ${ww.aw}).</span></div>`}).join('');
+  observe();
+}
+
+let io;
+function observe(){
+  const els=document.querySelectorAll('.reveal');
+  if(!('IntersectionObserver' in window)) return;
+  if(io) io.disconnect();
+  io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+  els.forEach(el=>{el.classList.remove('in'); void el.offsetWidth; io.observe(el)});
+}
+$('toggle').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b||b.dataset.k===cur) return; cur=b.dataset.k; try{localStorage.setItem('season',cur)}catch(e){} render(); const nb=$('tg-'+cur); if(nb) nb.focus()});
+
+// tooltip
+const tip=$('tip');
+function showTip(el,x,y){tip.textContent=el.dataset.tip; tip.hidden=false; const r=tip.getBoundingClientRect();
+  tip.style.left=Math.max(8,Math.min(x-r.width/2,innerWidth-r.width-8))+'px'; tip.style.top=(y-r.height-12<8?y+18:y-r.height-12)+'px'}
+document.addEventListener('pointermove',e=>{const el=e.target.closest&&e.target.closest('[data-tip]'); if(el) showTip(el,e.clientX,e.clientY); else tip.hidden=true});
+document.addEventListener('focusin',e=>{const el=e.target.closest&&e.target.closest('[data-tip]'); if(el){const r=el.getBoundingClientRect(); showTip(el,r.left+r.width/2,r.top)} else tip.hidden=true});
+document.addEventListener('scroll',()=>{tip.hidden=true},{passive:true});
+render();
+</script>

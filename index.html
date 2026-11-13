@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>NBA Europe Luck Report</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one centred column of stacked "quarters"; each section = scoreboard-style header + one chart. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#10182b; --muted:#566178; --line:#d8dde6; --mid:#e7eaef;
+  --warm:#e2622b; --cool:#2a78d6; --seq:#3d4f7a;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif; --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0d121e; --panel:#161d2d; --ink:#eef1f7; --muted:#9ba6bc; --line:#2a3349; --mid:#252d40;
+  --warm:#f07d48; --cool:#4d96ec; --seq:#8fa3d6; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0d121e; --panel:#161d2d; --ink:#eef1f7; --muted:#9ba6bc; --line:#2a3349; --mid:#252d40;
+  --warm:#f07d48; --cool:#4d96ec; --seq:#8fa3d6; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:920px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.02}
+h1{font-size:clamp(44px,9vw,84px);font-weight:800;text-transform:uppercase;letter-spacing:-.01em}
+h2{font-size:clamp(30px,5vw,42px);font-weight:700;text-transform:uppercase}
+h3{font-size:22px;font-weight:700}
+p{margin:0;max-width:65ch}
+.num{font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.hero{display:flex;flex-direction:column;gap:18px}
+.hero h1 em{font-style:normal;color:var(--warm)}
+.toggle{display:inline-flex;border:1.5px solid var(--ink);border-radius:999px;padding:3px;gap:3px;align-self:flex-start}
+.toggle button{font:600 15px var(--body);color:var(--ink);background:none;border:0;border-radius:999px;padding:7px 16px;cursor:pointer}
+.toggle button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.toggle button:focus-visible,[data-tip]:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
+.headline{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.hl{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.hl .big{font-family:var(--display);font-weight:800;font-size:54px;line-height:1}
+.hl .who{font-weight:600}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.sec{display:flex;flex-direction:column;gap:16px}
+.sec>header{display:flex;flex-direction:column;gap:8px;border-top:3px solid var(--ink);padding-top:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
+.scroll{overflow-x:auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center}
+/* slope */
+.slope{display:grid;grid-template-columns:minmax(0,1fr) clamp(44px,12vw,120px) minmax(0,1fr)}
+.slope .col{display:flex;flex-direction:column}
+.slope .hd{height:28px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.slope .col.r .hd{text-align:right}
+.srow{height:40px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);min-width:0;font-size:15px}
+.srow .rk{font-family:var(--display);font-weight:700;font-size:20px;width:22px;flex:none;color:var(--muted)}
+.srow .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.srow .rc{flex:none;color:var(--muted);font-size:14px}
+.col.r .srow{flex-direction:row-reverse}.col.r .nm{text-align:right}
+.slope svg{width:100%;margin-top:28px;display:block;overflow:visible}
+.slope path{fill:none;stroke-width:2.5;stroke-linecap:round;vector-effect:non-scaling-stroke;stroke-dasharray:1;stroke-dashoffset:0}
+/* luck bars */
+.lrow{display:grid;grid-template-columns:minmax(0,34%) 1fr;gap:10px;align-items:center;height:34px;font-size:15px}
+.lrow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.track{position:relative;height:22px}
+.track::before{content:"";position:absolute;left:50%;top:-6px;bottom:-6px;width:1px;background:var(--line)}
+.bar{position:absolute;top:0;height:22px;min-width:2px}
+.bar.pos{left:50%;background:var(--warm);border-radius:0 4px 4px 0;transform-origin:left}
+.bar.neg{right:50%;background:var(--cool);border-radius:4px 0 0 4px;transform-origin:right}
+.bval{position:absolute;top:0;line-height:22px;font-size:14px;font-weight:600;padding:0 6px;white-space:nowrap}
+.axis{display:grid;grid-template-columns:minmax(0,34%) 1fr;gap:10px;font-size:13px;color:var(--muted)}
+.axis div:last-child{display:flex;justify-content:space-between}
+/* tables */
+table{border-collapse:separate;border-spacing:2px;font-size:14px;width:100%}
+th{font-weight:600;color:var(--muted);font-size:12px;padding:2px 4px;white-space:nowrap}
+tbody th{text-align:left;max-width:150px;overflow:hidden;text-overflow:ellipsis;font-size:14px;color:var(--ink);font-weight:500;padding-right:8px}
+td{text-align:center;min-width:34px;height:34px;border-radius:3px;cursor:default;position:relative;font-weight:600;color:var(--ink)}
+td.diag{box-shadow:inset 0 0 0 2px var(--ink)}
+td.gift{box-shadow:inset 0 0 0 2px var(--warm)}td.rob{box-shadow:inset 0 0 0 2px var(--cool)}
+td small{display:block;font-size:10px;font-weight:600;color:var(--muted);line-height:1;margin-top:-2px}
+.detail{min-height:24px;font-size:15px;margin-top:10px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px}
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.calls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.call{display:flex;flex-direction:column;gap:2px;padding:10px 12px;font-size:14px;line-height:1.35}
+.call .hd{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--display);font-weight:700;font-size:20px}
+.call .hd span:first-child{font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.team{display:flex;flex-direction:column;gap:12px}
+.team .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.chip{font-size:13px;font-weight:600;border:1.5px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap;display:inline-flex;align-items:center}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:13px;color:var(--muted)}
+.kv b{display:block;font-family:var(--display);font-size:24px;line-height:1.1;color:var(--ink)}
+.dna{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;align-items:end;height:106px;position:relative}
+.dna::after{content:"";position:absolute;left:0;right:0;bottom:calc(18px + 33px);border-top:1px dashed var(--line)}
+.dna div{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px;font-size:10px;color:var(--muted);font-weight:600}
+.dna b{font-family:var(--display);font-size:15px;line-height:1;color:var(--muted);font-weight:700}
+.dna b.top{color:var(--ink)}
+.dna i{display:block;width:100%;max-width:18px;background:var(--seq);border-radius:3px 3px 0 0;transform-origin:bottom;min-height:2px}
+.note{font-size:14px;color:var(--muted)}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--bg);font-size:13px;line-height:1.35;padding:7px 10px;border-radius:5px;max-width:240px}
+footer{border-top:1px solid var(--line);padding-top:16px;font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes growx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growy{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){
+  .reveal.in{animation:rise .6s cubic-bezier(.2,.7,.2,1) both}
+  .in .bar{animation:growx .9s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i)*45ms + .15s)}
+  .in .bval{animation:rise .5s both;animation-delay:calc(var(--i)*45ms + .7s)}
+  .in .slope path{animation:draw 1s ease-out both;animation-delay:calc(var(--i)*60ms + .2s)}
+  .in td{animation:pop .35s both;animation-delay:calc(var(--i)*6ms + .1s)}
+  .in .dna i{animation:growy .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i)*50ms + .2s)}
+  .cards .reveal.in,.calls .reveal.in{animation-delay:calc(var(--i)*70ms)}
+}
+@media (max-width:520px){ .lrow,.axis{grid-template-columns:minmax(0,38%) 1fr} .srow .rc{font-size:12px} .srow{font-size:14px;gap:5px} }
+</style>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1>Who earned it.<br>Who got <em>the schedule</em>.</h1>
+    <p>Every week you only play one team. This page replays each week against <b>all eleven</b> others, so you can see who was good and who was just pointed at the right opponent.</p>
+    <div class="toggle" role="group" aria-label="Season" id="toggle"></div>
+    <div class="headline" id="headline"></div>
+  </section>
+
+  <section class="sec reveal" id="s-stand">
+    <header><h2>Real table vs deserved table</h2>
+      <p class="muted">Left: the actual standings. Right: ranked by expected wins, the wins an average schedule would have given. Lines show who moves.</p></header>
+    <div class="panel"><div class="slope" id="slope"></div></div>
+    <div class="legend"><span><i class="dot" style="background:var(--warm)"></i>ranked higher than deserved</span><span><i class="dot" style="background:var(--cool)"></i>ranked lower than deserved</span></div>
+  </section>
+
+  <section class="sec reveal" id="s-luck">
+    <header><h2>The luck meter</h2>
+      <p class="muted">Actual wins minus expected wins. A tie counts as half a win.</p></header>
+    <div class="panel"><div id="luck"></div></div>
+  </section>
+
+  <section class="sec reveal" id="s-weeks">
+    <header><h2>Week by week</h2>
+      <p class="muted">The number is how many of the other 11 teams you would have beaten that week. The letter is what actually happened.</p></header>
+    <div class="panel"><div class="scroll"><table id="weeks"></table></div></div>
+    <div class="legend"><span><i class="sw" style="box-shadow:inset 0 0 0 2px var(--warm)"></i>won a week most teams would have beaten you</span><span><i class="sw" style="box-shadow:inset 0 0 0 2px var(--cool)"></i>lost a week you'd have beaten most teams</span></div>
+  </section>
+
+  <section class="sec" id="s-close">
+    <header class="reveal"><h2>Decided by a whisker</h2>
+      <p class="muted">Matchups where a single category, won by almost nothing, settled the week.</p></header>
+    <div class="calls" id="close"></div>
+  </section>
+
+  <section class="sec" id="s-teams">
+    <header class="reveal"><h2>Team cards</h2>
+      <p class="muted">The number above each bar is the team's league rank in that category (1 is best). Bar height is how often they would win it against the whole league. The dashed line is 50%.</p></header>
+    <div class="cards" id="teams"></div>
+  </section>
+
+  <footer>
+    <span>For fun, not proof. A season is a small sample and luck evens out slowly.</span>
+    <span id="foot"></span>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const DATA={"league":"NBA Europe","updated":"2026-11-13","seasons":{"2027":{"label":"2026-27","weeks":[1,2,3],"regWeeks":17,"teams":[{"id":1,"name":"Gaudi Geezers","abbr":"GG","w":1,"l":1,"t":1,"xw":1.77,"apw":19,"apl":13,"apt":1,"weeks":[{"wk":1,"opp":12,"cw":4,"cl":5,"ct":0,"r":0,"aw":9,"al":2,"at":0},{"wk":2,"opp":7,"cw":5,"cl":4,"ct":0,"r":1,"aw":8,"al":3,"at":0},{"wk":3,"opp":8,"cw":4,"cl":4,"ct":1,"r":0.5,"aw":2,"al":8,"at":1}],"cat":{"PTS":0.424,"REB":0.5,"AST":0.667,"STL":0.47,"BLK":0.439,"3PM":0.712,"FG%":0.364,"FT%":0.727,"TO":0.545},"catActual":{"PTS":0.667,"REB":0.667,"AST":0.667,"STL":0.333,"BLK":0.333,"3PM":0.5,"FG%":0.333,"FT%":0.667,"TO":0.333},"oppStr":0.576,"wins":1.5,"luck":-0.27,"appct":0.591},{"id":2,"name":"Shifty's Gang","abbr":"SFG","w":2,"l":1,"t":0,"xw":1.18,"apw":12,"apl":19,"apt":2,"weeks":[{"wk":1,"opp":5,"cw":6,"cl":3,"ct":0,"r":1,"aw":4,"al":7,"at":0},{"wk":2,"opp":11,"cw":5,"cl":4,"ct":0,"r":1,"aw":3,"al":7,"at":1},{"wk":3,"opp":12,"cw":4,"cl":5,"ct":0,"r":0,"aw":5,"al":5,"at":1}],"cat":{"PTS":0.485,"REB":0.879,"AST":0.591,"STL":0.47,"BLK":0.273,"3PM":0.076,"FG%":0.848,"FT%":0.03,"TO":0.515},"catActual":{"PTS":0.333,"REB":1.0,"AST":1.0,"STL":0.333,"BLK":0.667,"3PM":0.0,"FG%":1.0,"FT%":0.0,"TO":0.667},"oppStr":0.515,"wins":2.0,"luck":0.82,"appct":0.394},{"id":3,"name":"BornReady","abbr":"KG5","w":0,"l":3,"t":0,"xw":1.32,"apw":14,"apl":18,"apt":1,"weeks":[{"wk":1,"opp":8,"cw":3,"cl":6,"ct":0,"r":0,"aw":4,"al":6,"at":1},{"wk":2,"opp":10,"cw":2,"cl":6,"ct":1,"r":0,"aw":0,"al":11,"at":0},{"wk":3,"opp":6,"cw":4,"cl":5,"ct":0,"r":0,"aw":10,"al":1,"at":0}],"cat":{"PTS":0.394,"REB":0.303,"AST":0.167,"STL":0.545,"BLK":0.924,"3PM":0.53,"FG%":0.455,"FT%":0.636,"TO":0.515},"catActual":{"PTS":0.333,"REB":0.0,"AST":0.0,"STL":0.167,"BLK":1.0,"3PM":0.667,"FG%":0.0,"FT%":0.333,"TO":0.667},"oppStr":0.773,"wins":0.0,"luck":-1.32,"appct":0.439},{"id":4,"name":"The Achilles Group Chat","abbr":"AGC","w":2,"l":1,"t":0,"xw":1.36,"apw":15,"apl":18,"apt":0,"weeks":[{"wk":1,"opp":10,"cw":3,"cl":6,"ct":0,"r":0,"aw":6,"al":5,"at":0},{"wk":2,"opp":5,"cw":5,"cl":4,"ct":0,"r":1,"aw":5,"al":6,"at":0},{"wk":3,"opp":11,"cw":5,"cl":4,"ct":0,"r":1,"aw":4,"al":7,"at":0}],"cat":{"PTS":0.424,"REB":0.167,"AST":0.5,"STL":0.439,"BLK":0.439,"3PM":0.348,"FG%":0.727,"FT%":0.545,"TO":0.909},"catActual":{"PTS":0.333,"REB":0.0,"AST":0.333,"STL":0.667,"BLK":0.667,"3PM":0.667,"FG%":0.667,"FT%":0.0,"TO":1.0},"oppStr":0.53,"wins":2.0,"luck":0.64,"appct":0.455},{"id":5,"name":"Pledge Allegiance to The Flagg","abbr":"PATF","w":0,"l":3,"t":0,"xw":0.73,"apw":8,"apl":25,"apt":0,"weeks":[{"wk":1,"opp":2,"cw":3,"cl":6,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":2,"opp":4,"cw":4,"cl":5,"ct":0,"r":0,"aw":5,"al":6,"at":0},{"wk":3,"opp":10,"cw":2,"cl":7,"ct":0,"r":0,"aw":0,"al":11,"at":0}],"cat":{"PTS":0.485,"REB":0.227,"AST":0.212,"STL":0.303,"BLK":0.061,"3PM":0.364,"FG%":0.424,"FT%":0.545,"TO":0.758},"catActual":{"PTS":0.333,"REB":0.333,"AST":0.0,"STL":0.667,"BLK":0.0,"3PM":0.333,"FG%":0.333,"FT%":0.667,"TO":0.333},"oppStr":0.545,"wins":0.0,"luck":-0.73,"appct":0.242},{"id":6,"name":"Marquez Sharks","abbr":"MQZ","w":2,"l":1,"t":0,"xw":1.95,"apw":21,"apl":11,"apt":1,"weeks":[{"wk":1,"opp":7,"cw":5,"cl":4,"ct":0,"r":1,"aw":7,"al":4,"at":0},{"wk":2,"opp":8,"cw":2,"cl":7,"ct":0,"r":0,"aw":5,"al":5,"at":1},{"wk":3,"opp":3,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":2,"at":0}],"cat":{"PTS":0.606,"REB":0.773,"AST":0.727,"STL":0.758,"BLK":0.697,"3PM":0.606,"FG%":0.333,"FT%":0.455,"TO":0.152},"catActual":{"PTS":0.333,"REB":0.667,"AST":0.667,"STL":0.333,"BLK":0.333,"3PM":0.667,"FG%":0.333,"FT%":0.333,"TO":0.333},"oppStr":0.682,"wins":2.0,"luck":0.05,"appct":0.652},{"id":7,"name":"The Wackos","abbr":"WAK","w":1,"l":2,"t":0,"xw":0.95,"apw":10,"apl":22,"apt":1,"weeks":[{"wk":1,"opp":6,"cw":4,"cl":5,"ct":0,"r":0,"aw":2,"al":8,"at":1},{"wk":2,"opp":1,"cw":4,"cl":5,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":3,"opp":9,"cw":6,"cl":3,"ct":0,"r":1,"aw":5,"al":6,"at":0}],"cat":{"PTS":0.5,"REB":0.333,"AST":0.03,"STL":0.409,"BLK":0.167,"3PM":0.833,"FG%":0.303,"FT%":0.561,"TO":0.939},"catActual":{"PTS":0.667,"REB":0.333,"AST":0.0,"STL":0.333,"BLK":0.0,"3PM":0.667,"FG%":1.0,"FT%":0.667,"TO":1.0},"oppStr":0.576,"wins":1.0,"luck":0.05,"appct":0.318},{"id":8,"name":"Selective Five","abbr":"47","w":2,"l":0,"t":1,"xw":2.27,"apw":24,"apl":7,"apt":2,"weeks":[{"wk":1,"opp":3,"cw":6,"cl":3,"ct":0,"r":1,"aw":8,"al":2,"at":1},{"wk":2,"opp":6,"cw":7,"cl":2,"ct":0,"r":1,"aw":10,"al":1,"at":0},{"wk":3,"opp":1,"cw":4,"cl":4,"ct":1,"r":0.5,"aw":6,"al":4,"at":1}],"cat":{"PTS":0.455,"REB":1.0,"AST":0.697,"STL":0.818,"BLK":0.621,"3PM":0.273,"FG%":0.758,"FT%":0.364,"TO":0.242},"catActual":{"PTS":0.667,"REB":1.0,"AST":1.0,"STL":1.0,"BLK":0.667,"3PM":0.167,"FG%":0.667,"FT%":0.333,"TO":0.333},"oppStr":0.379,"wins":2.5,"luck":0.23,"appct":0.758},{"id":9,"name":"Go Harden Or Go Home","abbr":"GHGH","w":0,"l":3,"t":0,"xw":0.55,"apw":5,"apl":26,"apt":2,"weeks":[{"wk":1,"opp":11,"cw":3,"cl":6,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":2,"opp":12,"cw":2,"cl":7,"ct":0,"r":0,"aw":2,"al":9,"at":0},{"wk":3,"opp":7,"cw":3,"cl":6,"ct":0,"r":0,"aw":3,"al":6,"at":2}],"cat":{"PTS":0.258,"REB":0.273,"AST":0.561,"STL":0.288,"BLK":0.273,"3PM":0.455,"FG%":0.394,"FT%":0.394,"TO":0.273},"catActual":{"PTS":0.0,"REB":0.0,"AST":0.667,"STL":0.667,"BLK":0.333,"3PM":0.333,"FG%":0.333,"FT%":0.333,"TO":0.0},"oppStr":0.515,"wins":0.0,"luck":-0.55,"appct":0.182},{"id":10,"name":"Miguel's Porto Dragons","abbr":"FCP","w":3,"l":0,"t":0,"xw":2.55,"apw":28,"apl":5,"apt":0,"weeks":[{"wk":1,"opp":4,"cw":6,"cl":3,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":2,"opp":3,"cw":6,"cl":2,"ct":1,"r":1,"aw":8,"al":3,"at":0},{"wk":3,"opp":5,"cw":7,"cl":2,"ct":0,"r":1,"aw":9,"al":2,"at":0}],"cat":{"PTS":0.848,"REB":0.394,"AST":0.97,"STL":0.333,"BLK":0.924,"3PM":0.909,"FG%":0.364,"FT%":0.712,"TO":0.303},"catActual":{"PTS":1.0,"REB":1.0,"AST":1.0,"STL":0.167,"BLK":0.667,"3PM":1.0,"FG%":0.667,"FT%":1.0,"TO":0.0},"oppStr":0.182,"wins":3.0,"luck":0.45,"appct":0.848},{"id":11,"name":"Landi Lemons","abbr":"LL","w":1,"l":2,"t":0,"xw":0.68,"apw":7,"apl":25,"apt":1,"weeks":[{"wk":1,"opp":9,"cw":6,"cl":3,"ct":0,"r":1,"aw":1,"al":10,"at":0},{"wk":2,"opp":2,"cw":4,"cl":5,"ct":0,"r":0,"aw":5,"al":6,"at":0},{"wk":3,"opp":4,"cw":4,"cl":5,"ct":0,"r":0,"aw":1,"al":9,"at":1}],"cat":{"PTS":0.424,"REB":0.485,"AST":0.621,"STL":0.303,"BLK":0.485,"3PM":0.455,"FG%":0.242,"FT%":0.424,"TO":0.333},"catActual":{"PTS":0.667,"REB":0.667,"AST":0.333,"STL":0.333,"BLK":0.667,"3PM":0.667,"FG%":0.0,"FT%":1.0,"TO":0.333},"oppStr":0.227,"wins":1.0,"luck":0.32,"appct":0.227},{"id":12,"name":"Milano's Shifty Blokes","abbr":"MSB","w":3,"l":0,"t":0,"xw":2.68,"apw":29,"apl":3,"apt":1,"weeks":[{"wk":1,"opp":1,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":1,"at":1},{"wk":2,"opp":9,"cw":7,"cl":2,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":3,"opp":2,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":2,"at":0}],"cat":{"PTS":0.697,"REB":0.667,"AST":0.258,"STL":0.864,"BLK":0.697,"3PM":0.439,"FG%":0.788,"FT%":0.606,"TO":0.515},"catActual":{"PTS":0.667,"REB":0.333,"AST":0.333,"STL":1.0,"BLK":0.667,"3PM":0.333,"FG%":0.667,"FT%":0.667,"TO":1.0},"oppStr":0.5,"wins":3.0,"luck":0.32,"appct":0.894}],"swap":[[1.5,2,1,2,2,1,2,2.5,1,3,2,1],[0,2,0,1,1,1,0.5,1.5,2,2,3,1],[1,2,0,1,2,0.5,1,1,2,1,2,1],[1,1,0,2,3,1,0,2,1,2,3,1],[1,0,1,0,0,1,0,0,1,1,2,1],[2,2,1,2,2,2,2,2,2,3,2.5,1],[0,0,0,1,0,0,1,1.5,2,2,3,1],[2.0,2,2,2,2,2,3,2.5,2,3,3,2],[0,0,0,0.5,0,0,0,2,0,2,1,0.5],[3,3,3,2,3,1,3,3,2,3,2,3],[1,0,0,1,1,0,0.5,0,1,2,1,1],[3,3,2.5,2,2,2,3,3,3,3,3,3]],"close":[{"wk":2,"win":2,"lose":11,"score":"5-4","cat":"FG%","a":0.47260274,"b":0.47035573,"z":0.073,"flip":"loss","winAP":0.318,"loseAP":0.455},{"wk":1,"win":12,"lose":1,"score":"5-4","cat":"STL","a":47.0,"b":46.0,"z":0.143,"flip":"loss","winAP":0.864,"loseAP":0.818},{"wk":3,"win":4,"lose":11,"score":"5-4","cat":"PTS","a":608.0,"b":590.0,"z":0.244,"flip":"loss","winAP":0.364,"loseAP":0.136},{"wk":3,"win":6,"lose":3,"score":"5-4","cat":"FG%","a":0.47574627,"b":0.47028862,"z":0.28,"flip":"loss","winAP":0.818,"loseAP":0.909},{"wk":2,"win":4,"lose":5,"score":"5-4","cat":"AST","a":128.0,"b":122.0,"z":0.29,"flip":"loss","winAP":0.455,"loseAP":0.455},{"wk":2,"win":1,"lose":7,"score":"5-4","cat":"FT%","a":0.82014388,"b":0.808,"z":0.359,"flip":"loss","winAP":0.727,"loseAP":0.273},{"wk":3,"win":12,"lose":2,"score":"5-4","cat":"PTS","a":729.0,"b":696.0,"z":0.447,"flip":"loss","winAP":0.818,"loseAP":0.5},{"wk":1,"win":6,"lose":7,"score":"5-4","cat":"3PM","a":63.0,"b":54.0,"z":0.717,"flip":"loss","winAP":0.636,"loseAP":0.227}],"cats":["PTS","REB","AST","STL","BLK","3PM","FG%","FT%","TO"]},"2026":{"label":"2025-26","weeks":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],"regWeeks":16,"teams":[{"id":1,"name":"Buckets Bros","abbr":"BB","w":7,"l":9,"t":0,"xw":8.5,"apw":92,"apl":81,"apt":3,"weeks":[{"wk":1,"opp":12,"cw":4,"cl":5,"ct":0,"r":0,"aw":7,"al":4,"at":0},{"wk":2,"opp":7,"cw":7,"cl":2,"ct":0,"r":1,"aw":4,"al":7,"at":0},{"wk":3,"opp":8,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":4,"opp":3,"cw":6,"cl":3,"ct":0,"r":1,"aw":8,"al":2,"at":1},{"wk":5,"opp":6,"cw":3,"cl":6,"ct":0,"r":0,"aw":5,"al":5,"at":1},{"wk":6,"opp":10,"cw":7,"cl":2,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":7,"opp":9,"cw":5,"cl":4,"ct":0,"r":1,"aw":6,"al":5,"at":0},{"wk":8,"opp":2,"cw":7,"cl":2,"ct":0,"r":1,"aw":10,"al":1,"at":0},{"wk":9,"opp":4,"cw":0,"cl":8,"ct":1,"r":0,"aw":0,"al":11,"at":0},{"wk":10,"opp":5,"cw":3,"cl":6,"ct":0,"r":0,"aw":4,"al":7,"at":0},{"wk":11,"opp":11,"cw":4,"cl":5,"ct":0,"r":0,"aw":6,"al":4,"at":1},{"wk":12,"opp":12,"cw":5,"cl":3,"ct":1,"r":1,"aw":10,"al":1,"at":0},{"wk":13,"opp":7,"cw":1,"cl":8,"ct":0,"r":0,"aw":2,"al":9,"at":0},{"wk":14,"opp":8,"cw":3,"cl":6,"ct":0,"r":0,"aw":4,"al":7,"at":0},{"wk":15,"opp":3,"cw":4,"cl":5,"ct":0,"r":0,"aw":1,"al":10,"at":0},{"wk":16,"opp":6,"cw":2,"cl":6,"ct":1,"r":0,"aw":5,"al":6,"at":0}],"cat":{"PTS":0.452,"REB":0.688,"AST":0.645,"STL":0.591,"BLK":0.588,"3PM":0.398,"FG%":0.619,"FT%":0.244,"TO":0.438},"catActual":{"PTS":0.438,"REB":0.5,"AST":0.625,"STL":0.594,"BLK":0.562,"3PM":0.406,"FG%":0.562,"FT%":0.125,"TO":0.406},"oppStr":0.597,"wins":7.0,"luck":-1.5,"appct":0.531},{"id":2,"name":"Maximilian's Great Team","abbr":"MGT","w":3,"l":13,"t":0,"xw":6.23,"apw":67,"apl":106,"apt":3,"weeks":[{"wk":1,"opp":5,"cw":2,"cl":7,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":2,"opp":11,"cw":5,"cl":4,"ct":0,"r":1,"aw":6,"al":4,"at":1},{"wk":3,"opp":12,"cw":4,"cl":5,"ct":0,"r":0,"aw":6,"al":4,"at":1},{"wk":4,"opp":7,"cw":3,"cl":6,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":5,"opp":8,"cw":3,"cl":6,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":6,"opp":3,"cw":3,"cl":5,"ct":1,"r":0,"aw":2,"al":9,"at":0},{"wk":7,"opp":6,"cw":2,"cl":7,"ct":0,"r":0,"aw":4,"al":7,"at":0},{"wk":8,"opp":1,"cw":2,"cl":7,"ct":0,"r":0,"aw":8,"al":3,"at":0},{"wk":9,"opp":9,"cw":3,"cl":6,"ct":0,"r":0,"aw":5,"al":6,"at":0},{"wk":10,"opp":10,"cw":2,"cl":7,"ct":0,"r":0,"aw":2,"al":8,"at":1},{"wk":11,"opp":4,"cw":3,"cl":6,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":12,"opp":5,"cw":4,"cl":5,"ct":0,"r":0,"aw":1,"al":10,"at":0},{"wk":13,"opp":11,"cw":7,"cl":2,"ct":0,"r":1,"aw":4,"al":7,"at":0},{"wk":14,"opp":12,"cw":8,"cl":1,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":15,"opp":7,"cw":2,"cl":7,"ct":0,"r":0,"aw":5,"al":6,"at":0},{"wk":16,"opp":8,"cw":2,"cl":7,"ct":0,"r":0,"aw":4,"al":7,"at":0}],"cat":{"PTS":0.455,"REB":0.25,"AST":0.614,"STL":0.418,"BLK":0.418,"3PM":0.494,"FG%":0.398,"FT%":0.585,"TO":0.412},"catActual":{"PTS":0.438,"REB":0.188,"AST":0.562,"STL":0.281,"BLK":0.375,"3PM":0.312,"FG%":0.312,"FT%":0.5,"TO":0.5},"oppStr":0.616,"wins":3.0,"luck":-3.23,"appct":0.389},{"id":3,"name":"James HardOn","abbr":"JHO","w":5,"l":10,"t":1,"xw":6.18,"apw":65,"apl":105,"apt":6,"weeks":[{"wk":1,"opp":8,"cw":3,"cl":6,"ct":0,"r":0,"aw":0,"al":9,"at":2},{"wk":2,"opp":10,"cw":4,"cl":5,"ct":0,"r":0,"aw":8,"al":3,"at":0},{"wk":3,"opp":6,"cw":4,"cl":5,"ct":0,"r":0,"aw":8,"al":3,"at":0},{"wk":4,"opp":1,"cw":3,"cl":6,"ct":0,"r":0,"aw":6,"al":5,"at":0},{"wk":5,"opp":9,"cw":6,"cl":2,"ct":1,"r":1,"aw":10,"al":1,"at":0},{"wk":6,"opp":2,"cw":5,"cl":3,"ct":1,"r":1,"aw":7,"al":4,"at":0},{"wk":7,"opp":4,"cw":4,"cl":4,"ct":1,"r":0.5,"aw":6,"al":3,"at":2},{"wk":8,"opp":5,"cw":3,"cl":6,"ct":0,"r":0,"aw":1,"al":10,"at":0},{"wk":9,"opp":11,"cw":5,"cl":3,"ct":1,"r":1,"aw":5,"al":6,"at":0},{"wk":10,"opp":12,"cw":7,"cl":2,"ct":0,"r":1,"aw":6,"al":5,"at":0},{"wk":11,"opp":7,"cw":3,"cl":6,"ct":0,"r":0,"aw":0,"al":10,"at":1},{"wk":12,"opp":8,"cw":2,"cl":7,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":13,"opp":10,"cw":2,"cl":7,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":14,"opp":6,"cw":1,"cl":8,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":15,"opp":1,"cw":5,"cl":4,"ct":0,"r":1,"aw":5,"al":5,"at":1},{"wk":16,"opp":9,"cw":4,"cl":5,"ct":0,"r":0,"aw":3,"al":8,"at":0}],"cat":{"PTS":0.361,"REB":0.409,"AST":0.648,"STL":0.298,"BLK":0.295,"3PM":0.358,"FG%":0.58,"FT%":0.585,"TO":0.608},"catActual":{"PTS":0.312,"REB":0.438,"AST":0.625,"STL":0.312,"BLK":0.219,"3PM":0.344,"FG%":0.5,"FT%":0.562,"TO":0.625},"oppStr":0.452,"wins":5.5,"luck":-0.68,"appct":0.386},{"id":4,"name":"Lasse's Lucrative Team","abbr":"LLT","w":9,"l":6,"t":1,"xw":7.14,"apw":76,"apl":95,"apt":5,"weeks":[{"wk":1,"opp":10,"cw":3,"cl":6,"ct":0,"r":0,"aw":6,"al":4,"at":1},{"wk":2,"opp":5,"cw":8,"cl":1,"ct":0,"r":1,"aw":3,"al":7,"at":1},{"wk":3,"opp":11,"cw":5,"cl":4,"ct":0,"r":1,"aw":5,"al":6,"at":0},{"wk":4,"opp":12,"cw":7,"cl":2,"ct":0,"r":1,"aw":5,"al":6,"at":0},{"wk":5,"opp":7,"cw":7,"cl":2,"ct":0,"r":1,"aw":7,"al":4,"at":0},{"wk":6,"opp":8,"cw":3,"cl":6,"ct":0,"r":0,"aw":4,"al":7,"at":0},{"wk":7,"opp":3,"cw":4,"cl":4,"ct":1,"r":0.5,"aw":6,"al":4,"at":1},{"wk":8,"opp":6,"cw":4,"cl":5,"ct":0,"r":0,"aw":7,"al":4,"at":0},{"wk":9,"opp":1,"cw":8,"cl":0,"ct":1,"r":1,"aw":3,"al":8,"at":0},{"wk":10,"opp":9,"cw":6,"cl":3,"ct":0,"r":1,"aw":4,"al":6,"at":1},{"wk":11,"opp":2,"cw":6,"cl":3,"ct":0,"r":1,"aw":7,"al":4,"at":0},{"wk":12,"opp":10,"cw":3,"cl":5,"ct":1,"r":0,"aw":4,"al":7,"at":0},{"wk":13,"opp":5,"cw":3,"cl":6,"ct":0,"r":0,"aw":5,"al":6,"at":0},{"wk":14,"opp":11,"cw":6,"cl":2,"ct":1,"r":1,"aw":5,"al":5,"at":1},{"wk":15,"opp":12,"cw":6,"cl":3,"ct":0,"r":1,"aw":5,"al":6,"at":0},{"wk":16,"opp":7,"cw":2,"cl":7,"ct":0,"r":0,"aw":0,"al":11,"at":0}],"cat":{"PTS":0.457,"REB":0.634,"AST":0.491,"STL":0.472,"BLK":0.648,"3PM":0.122,"FG%":0.727,"FT%":0.261,"TO":0.54},"catActual":{"PTS":0.688,"REB":0.688,"AST":0.562,"STL":0.531,"BLK":0.812,"3PM":0.375,"FG%":0.812,"FT%":0.312,"TO":0.406},"oppStr":0.384,"wins":9.5,"luck":2.36,"appct":0.446},{"id":5,"name":"The Haliban","abbr":"HAL","w":8,"l":8,"t":0,"xw":8.09,"apw":86,"apl":84,"apt":6,"weeks":[{"wk":1,"opp":2,"cw":7,"cl":2,"ct":0,"r":1,"aw":6,"al":3,"at":2},{"wk":2,"opp":4,"cw":1,"cl":8,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":3,"opp":10,"cw":1,"cl":8,"ct":0,"r":0,"aw":2,"al":9,"at":0},{"wk":4,"opp":11,"cw":7,"cl":2,"ct":0,"r":1,"aw":8,"al":3,"at":0},{"wk":5,"opp":12,"cw":5,"cl":4,"ct":0,"r":1,"aw":5,"al":5,"at":1},{"wk":6,"opp":7,"cw":6,"cl":3,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":7,"opp":8,"cw":2,"cl":7,"ct":0,"r":0,"aw":2,"al":9,"at":0},{"wk":8,"opp":3,"cw":6,"cl":3,"ct":0,"r":1,"aw":3,"al":8,"at":0},{"wk":9,"opp":6,"cw":4,"cl":5,"ct":0,"r":0,"aw":9,"al":1,"at":1},{"wk":10,"opp":1,"cw":6,"cl":3,"ct":0,"r":1,"aw":8,"al":3,"at":0},{"wk":11,"opp":9,"cw":4,"cl":5,"ct":0,"r":0,"aw":4,"al":6,"at":1},{"wk":12,"opp":2,"cw":5,"cl":4,"ct":0,"r":1,"aw":7,"al":4,"at":0},{"wk":13,"opp":4,"cw":6,"cl":3,"ct":0,"r":1,"aw":5,"al":6,"at":0},{"wk":14,"opp":10,"cw":3,"cl":6,"ct":0,"r":0,"aw":4,"al":6,"at":1},{"wk":15,"opp":11,"cw":4,"cl":5,"ct":0,"r":0,"aw":6,"al":5,"at":0},{"wk":16,"opp":12,"cw":3,"cl":6,"ct":0,"r":0,"aw":8,"al":3,"at":0}],"cat":{"PTS":0.722,"REB":0.591,"AST":0.352,"STL":0.25,"BLK":0.401,"3PM":0.551,"FG%":0.676,"FT%":0.347,"TO":0.506},"catActual":{"PTS":0.812,"REB":0.75,"AST":0.312,"STL":0.25,"BLK":0.375,"3PM":0.562,"FG%":0.625,"FT%":0.312,"TO":0.375},"oppStr":0.409,"wins":8.0,"luck":-0.09,"appct":0.506},{"id":6,"name":"Marquez Sharks","abbr":"MQZ","w":13,"l":2,"t":1,"xw":13.64,"apw":148,"apl":24,"apt":4,"weeks":[{"wk":1,"opp":7,"cw":5,"cl":4,"ct":0,"r":1,"aw":7,"al":1,"at":3},{"wk":2,"opp":8,"cw":4,"cl":4,"ct":1,"r":0.5,"aw":10,"al":0,"at":1},{"wk":3,"opp":3,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":4,"opp":10,"cw":6,"cl":3,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":5,"opp":1,"cw":6,"cl":3,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":6,"opp":9,"cw":6,"cl":3,"ct":0,"r":1,"aw":10,"al":1,"at":0},{"wk":7,"opp":2,"cw":7,"cl":2,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":8,"opp":4,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":9,"opp":5,"cw":5,"cl":4,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":10,"opp":11,"cw":8,"cl":1,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":11,"opp":12,"cw":8,"cl":1,"ct":0,"r":1,"aw":10,"al":1,"at":0},{"wk":12,"opp":7,"cw":4,"cl":5,"ct":0,"r":0,"aw":6,"al":5,"at":0},{"wk":13,"opp":8,"cw":4,"cl":5,"ct":0,"r":0,"aw":4,"al":7,"at":0},{"wk":14,"opp":3,"cw":8,"cl":1,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":15,"opp":10,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":16,"opp":1,"cw":6,"cl":2,"ct":1,"r":1,"aw":10,"al":1,"at":0}],"cat":{"PTS":0.841,"REB":0.92,"AST":0.761,"STL":0.869,"BLK":0.384,"3PM":0.705,"FG%":0.614,"FT%":0.676,"TO":0.199},"catActual":{"PTS":0.688,"REB":0.938,"AST":0.812,"STL":0.875,"BLK":0.312,"3PM":0.562,"FG%":0.688,"FT%":0.75,"TO":0.188},"oppStr":0.489,"wins":13.5,"luck":-0.14,"appct":0.852},{"id":7,"name":"God Shammgod","abbr":"OOT","w":7,"l":9,"t":0,"xw":6.68,"apw":71,"apl":100,"apt":5,"weeks":[{"wk":1,"opp":6,"cw":4,"cl":5,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":2,"opp":1,"cw":2,"cl":7,"ct":0,"r":0,"aw":1,"al":10,"at":0},{"wk":3,"opp":9,"cw":2,"cl":7,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":4,"opp":2,"cw":6,"cl":3,"ct":0,"r":1,"aw":3,"al":8,"at":0},{"wk":5,"opp":4,"cw":2,"cl":7,"ct":0,"r":0,"aw":1,"al":10,"at":0},{"wk":6,"opp":5,"cw":3,"cl":6,"ct":0,"r":0,"aw":4,"al":6,"at":1},{"wk":7,"opp":11,"cw":2,"cl":7,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":8,"opp":12,"cw":3,"cl":6,"ct":0,"r":0,"aw":2,"al":9,"at":0},{"wk":9,"opp":10,"cw":2,"cl":7,"ct":0,"r":0,"aw":5,"al":6,"at":0},{"wk":10,"opp":8,"cw":5,"cl":4,"ct":0,"r":1,"aw":7,"al":2,"at":2},{"wk":11,"opp":3,"cw":6,"cl":3,"ct":0,"r":1,"aw":5,"al":6,"at":0},{"wk":12,"opp":6,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":13,"opp":1,"cw":8,"cl":1,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":14,"opp":9,"cw":2,"cl":7,"ct":0,"r":0,"aw":3,"al":6,"at":2},{"wk":15,"opp":2,"cw":7,"cl":2,"ct":0,"r":1,"aw":10,"al":1,"at":0},{"wk":16,"opp":4,"cw":7,"cl":2,"ct":0,"r":1,"aw":7,"al":4,"at":0}],"cat":{"PTS":0.349,"REB":0.412,"AST":0.278,"STL":0.335,"BLK":0.812,"3PM":0.565,"FG%":0.301,"FT%":0.403,"TO":0.605},"catActual":{"PTS":0.312,"REB":0.375,"AST":0.188,"STL":0.375,"BLK":0.875,"3PM":0.562,"FG%":0.25,"FT%":0.438,"TO":0.75},"oppStr":0.477,"wins":7.0,"luck":0.32,"appct":0.418},{"id":8,"name":"Selective Five","abbr":"47","w":11,"l":4,"t":1,"xw":11.05,"apw":118,"apl":51,"apt":7,"weeks":[{"wk":1,"opp":3,"cw":6,"cl":3,"ct":0,"r":1,"aw":7,"al":3,"at":1},{"wk":2,"opp":6,"cw":4,"cl":4,"ct":1,"r":0.5,"aw":10,"al":0,"at":1},{"wk":3,"opp":1,"cw":4,"cl":5,"ct":0,"r":0,"aw":9,"al":1,"at":1},{"wk":4,"opp":9,"cw":6,"cl":3,"ct":0,"r":1,"aw":9,"al":1,"at":1},{"wk":5,"opp":2,"cw":6,"cl":3,"ct":0,"r":1,"aw":8,"al":3,"at":0},{"wk":6,"opp":4,"cw":6,"cl":3,"ct":0,"r":1,"aw":7,"al":4,"at":0},{"wk":7,"opp":5,"cw":7,"cl":2,"ct":0,"r":1,"aw":10,"al":1,"at":0},{"wk":8,"opp":11,"cw":4,"cl":5,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":9,"opp":12,"cw":6,"cl":3,"ct":0,"r":1,"aw":8,"al":2,"at":1},{"wk":10,"opp":7,"cw":4,"cl":5,"ct":0,"r":0,"aw":6,"al":5,"at":0},{"wk":11,"opp":10,"cw":3,"cl":6,"ct":0,"r":0,"aw":6,"al":3,"at":2},{"wk":12,"opp":3,"cw":7,"cl":2,"ct":0,"r":1,"aw":2,"al":9,"at":0},{"wk":13,"opp":6,"cw":5,"cl":4,"ct":0,"r":1,"aw":6,"al":5,"at":0},{"wk":14,"opp":1,"cw":6,"cl":3,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":15,"opp":9,"cw":7,"cl":2,"ct":0,"r":1,"aw":10,"al":1,"at":0},{"wk":16,"opp":2,"cw":7,"cl":2,"ct":0,"r":1,"aw":8,"al":3,"at":0}],"cat":{"PTS":0.54,"REB":0.784,"AST":0.77,"STL":0.764,"BLK":0.81,"3PM":0.412,"FG%":0.443,"FT%":0.386,"TO":0.244},"catActual":{"PTS":0.688,"REB":0.875,"AST":0.812,"STL":0.844,"BLK":0.875,"3PM":0.5,"FG%":0.375,"FT%":0.375,"TO":0.188},"oppStr":0.398,"wins":11.5,"luck":0.45,"appct":0.69},{"id":9,"name":"Go Harden Or Go Home","abbr":"GHGH","w":8,"l":8,"t":0,"xw":6.0,"apw":65,"apl":109,"apt":2,"weeks":[{"wk":1,"opp":11,"cw":7,"cl":2,"ct":0,"r":1,"aw":5,"al":5,"at":1},{"wk":2,"opp":12,"cw":3,"cl":6,"ct":0,"r":0,"aw":2,"al":8,"at":1},{"wk":3,"opp":7,"cw":7,"cl":2,"ct":0,"r":1,"aw":3,"al":8,"at":0},{"wk":4,"opp":8,"cw":3,"cl":6,"ct":0,"r":0,"aw":4,"al":7,"at":0},{"wk":5,"opp":3,"cw":2,"cl":6,"ct":1,"r":0,"aw":0,"al":11,"at":0},{"wk":6,"opp":6,"cw":3,"cl":6,"ct":0,"r":0,"aw":1,"al":10,"at":0},{"wk":7,"opp":1,"cw":4,"cl":5,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":8,"opp":10,"cw":5,"cl":4,"ct":0,"r":1,"aw":6,"al":5,"at":0},{"wk":9,"opp":2,"cw":6,"cl":3,"ct":0,"r":1,"aw":6,"al":5,"at":0},{"wk":10,"opp":4,"cw":3,"cl":6,"ct":0,"r":0,"aw":2,"al":9,"at":0},{"wk":11,"opp":5,"cw":5,"cl":4,"ct":0,"r":1,"aw":2,"al":9,"at":0},{"wk":12,"opp":11,"cw":5,"cl":3,"ct":1,"r":1,"aw":9,"al":2,"at":0},{"wk":13,"opp":12,"cw":3,"cl":6,"ct":0,"r":0,"aw":9,"al":2,"at":0},{"wk":14,"opp":7,"cw":7,"cl":2,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":15,"opp":8,"cw":2,"cl":7,"ct":0,"r":0,"aw":1,"al":10,"at":0},{"wk":16,"opp":3,"cw":5,"cl":4,"ct":0,"r":1,"aw":3,"al":8,"at":0}],"cat":{"PTS":0.344,"REB":0.21,"AST":0.358,"STL":0.483,"BLK":0.307,"3PM":0.645,"FG%":0.33,"FT%":0.716,"TO":0.688},"catActual":{"PTS":0.312,"REB":0.25,"AST":0.375,"STL":0.469,"BLK":0.344,"3PM":0.625,"FG%":0.5,"FT%":0.812,"TO":0.75},"oppStr":0.534,"wins":8.0,"luck":2.0,"appct":0.375},{"id":10,"name":"Miguel's Porto Dragons","abbr":"FCP","w":12,"l":4,"t":0,"xw":11.91,"apw":130,"apl":44,"apt":2,"weeks":[{"wk":1,"opp":4,"cw":6,"cl":3,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":2,"opp":3,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":3,"opp":5,"cw":8,"cl":1,"ct":0,"r":1,"aw":8,"al":3,"at":0},{"wk":4,"opp":6,"cw":3,"cl":6,"ct":0,"r":0,"aw":8,"al":3,"at":0},{"wk":5,"opp":11,"cw":5,"cl":4,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":6,"opp":1,"cw":2,"cl":7,"ct":0,"r":0,"aw":5,"al":6,"at":0},{"wk":7,"opp":12,"cw":6,"cl":3,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":8,"opp":9,"cw":4,"cl":5,"ct":0,"r":0,"aw":3,"al":7,"at":1},{"wk":9,"opp":7,"cw":7,"cl":2,"ct":0,"r":1,"aw":9,"al":2,"at":0},{"wk":10,"opp":2,"cw":7,"cl":2,"ct":0,"r":1,"aw":10,"al":1,"at":0},{"wk":11,"opp":8,"cw":6,"cl":3,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":12,"opp":4,"cw":5,"cl":3,"ct":1,"r":1,"aw":7,"al":4,"at":0},{"wk":13,"opp":3,"cw":7,"cl":2,"ct":0,"r":1,"aw":8,"al":3,"at":0},{"wk":14,"opp":5,"cw":6,"cl":3,"ct":0,"r":1,"aw":6,"al":5,"at":0},{"wk":15,"opp":6,"cw":4,"cl":5,"ct":0,"r":0,"aw":6,"al":4,"at":1},{"wk":16,"opp":11,"cw":8,"cl":1,"ct":0,"r":1,"aw":11,"al":0,"at":0}],"cat":{"PTS":0.821,"REB":0.395,"AST":0.705,"STL":0.722,"BLK":0.602,"3PM":0.847,"FG%":0.352,"FT%":0.545,"TO":0.426},"catActual":{"PTS":0.812,"REB":0.438,"AST":0.812,"STL":0.688,"BLK":0.562,"3PM":0.875,"FG%":0.375,"FT%":0.75,"TO":0.281},"oppStr":0.477,"wins":12.0,"luck":0.09,"appct":0.744},{"id":11,"name":"Slick Vic","abbr":"SV","w":4,"l":12,"t":0,"xw":3.73,"apw":39,"apl":133,"apt":4,"weeks":[{"wk":1,"opp":9,"cw":2,"cl":7,"ct":0,"r":0,"aw":0,"al":10,"at":1},{"wk":2,"opp":2,"cw":4,"cl":5,"ct":0,"r":0,"aw":5,"al":6,"at":0},{"wk":3,"opp":4,"cw":4,"cl":5,"ct":0,"r":0,"aw":1,"al":10,"at":0},{"wk":4,"opp":5,"cw":2,"cl":7,"ct":0,"r":0,"aw":2,"al":9,"at":0},{"wk":5,"opp":10,"cw":4,"cl":5,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":6,"opp":12,"cw":1,"cl":8,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":7,"opp":7,"cw":7,"cl":2,"ct":0,"r":1,"aw":4,"al":7,"at":0},{"wk":8,"opp":8,"cw":5,"cl":4,"ct":0,"r":1,"aw":2,"al":8,"at":1},{"wk":9,"opp":3,"cw":3,"cl":5,"ct":1,"r":0,"aw":2,"al":9,"at":0},{"wk":10,"opp":6,"cw":1,"cl":8,"ct":0,"r":0,"aw":0,"al":11,"at":0},{"wk":11,"opp":1,"cw":5,"cl":4,"ct":0,"r":1,"aw":6,"al":4,"at":1},{"wk":12,"opp":9,"cw":3,"cl":5,"ct":1,"r":0,"aw":8,"al":3,"at":0},{"wk":13,"opp":2,"cw":2,"cl":7,"ct":0,"r":0,"aw":2,"al":9,"at":0},{"wk":14,"opp":4,"cw":2,"cl":6,"ct":1,"r":0,"aw":1,"al":9,"at":1},{"wk":15,"opp":5,"cw":5,"cl":4,"ct":0,"r":1,"aw":2,"al":9,"at":0},{"wk":16,"opp":10,"cw":1,"cl":8,"ct":0,"r":0,"aw":1,"al":10,"at":0}],"cat":{"PTS":0.276,"REB":0.153,"AST":0.247,"STL":0.304,"BLK":0.116,"3PM":0.491,"FG%":0.409,"FT%":0.722,"TO":0.662},"catActual":{"PTS":0.25,"REB":0.188,"AST":0.188,"STL":0.219,"BLK":0.062,"3PM":0.531,"FG%":0.5,"FT%":0.562,"TO":0.781},"oppStr":0.571,"wins":4.0,"luck":0.27,"appct":0.233},{"id":12,"name":"Milano's Shifty Blokes","abbr":"MSB","w":7,"l":9,"t":0,"xw":6.86,"apw":72,"apl":97,"apt":7,"weeks":[{"wk":1,"opp":1,"cw":5,"cl":4,"ct":0,"r":1,"aw":5,"al":5,"at":1},{"wk":2,"opp":9,"cw":6,"cl":3,"ct":0,"r":1,"aw":5,"al":5,"at":1},{"wk":3,"opp":2,"cw":5,"cl":4,"ct":0,"r":1,"aw":5,"al":6,"at":0},{"wk":4,"opp":4,"cw":2,"cl":7,"ct":0,"r":0,"aw":1,"al":10,"at":0},{"wk":5,"opp":5,"cw":4,"cl":5,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":6,"opp":11,"cw":8,"cl":1,"ct":0,"r":1,"aw":5,"al":5,"at":1},{"wk":7,"opp":10,"cw":3,"cl":6,"ct":0,"r":0,"aw":3,"al":7,"at":1},{"wk":8,"opp":7,"cw":6,"cl":3,"ct":0,"r":1,"aw":11,"al":0,"at":0},{"wk":9,"opp":8,"cw":3,"cl":6,"ct":0,"r":0,"aw":2,"al":9,"at":0},{"wk":10,"opp":3,"cw":2,"cl":7,"ct":0,"r":0,"aw":3,"al":6,"at":2},{"wk":11,"opp":6,"cw":1,"cl":8,"ct":0,"r":0,"aw":3,"al":8,"at":0},{"wk":12,"opp":1,"cw":3,"cl":5,"ct":1,"r":0,"aw":3,"al":8,"at":0},{"wk":13,"opp":9,"cw":6,"cl":3,"ct":0,"r":1,"aw":10,"al":1,"at":0},{"wk":14,"opp":2,"cw":1,"cl":8,"ct":0,"r":0,"aw":2,"al":8,"at":1},{"wk":15,"opp":4,"cw":3,"cl":6,"ct":0,"r":0,"aw":5,"al":6,"at":0},{"wk":16,"opp":5,"cw":6,"cl":3,"ct":0,"r":1,"aw":6,"al":5,"at":0}],"cat":{"PTS":0.384,"REB":0.554,"AST":0.131,"STL":0.494,"BLK":0.619,"3PM":0.412,"FG%":0.551,"FT%":0.528,"TO":0.673},"catActual":{"PTS":0.25,"REB":0.375,"AST":0.125,"STL":0.562,"BLK":0.625,"3PM":0.344,"FG%":0.5,"FT%":0.5,"TO":0.75},"oppStr":0.597,"wins":7.0,"luck":0.14,"appct":0.429}],"swap":[[7,8,9,10,9,7,8,10,7.5,10.5,8,6.5],[5.5,3,8,6,5,6,5,8.5,7.5,6,7,4],[4.5,6,5.5,8.5,7,5.5,7,6,5.0,5.5,5,8],[6,6.5,9.0,9.5,11,8,7,7,5.5,6,6,6.5],[8,8,9,10.5,8,7.5,10.0,11,6,6.5,7,5.5],[14,12.5,14.5,13,16,13.5,13,13.5,13,15,13.5,12],[6,4.5,9.5,10,8,8,7,9,6,5.5,3.0,4],[8.5,11,11.5,13,13,12.0,10.5,11.5,12,10,10.5,9.5],[3,4,6,7,8.5,5,6.5,7,8,10,6,3],[9.5,12,14,13,13,9,12,14.5,10,12,11,13],[4,1,4,6,5,3,7,3.5,2.5,4.0,4,1],[4,4,7,8.5,8.5,8,8,9.0,7.0,5,6.5,7]],"close":[{"wk":3,"win":12,"lose":2,"score":"5-4","cat":"REB","a":208.0,"b":207.0,"z":0.025,"flip":"loss","winAP":0.455,"loseAP":0.591},{"wk":15,"win":3,"lose":1,"score":"5-4","cat":"REB","a":222.0,"b":220.0,"z":0.051,"flip":"loss","winAP":0.5,"loseAP":0.091},{"wk":11,"win":11,"lose":1,"score":"5-4","cat":"FG%","a":0.49641577,"b":0.49508841,"z":0.057,"flip":"loss","winAP":0.591,"loseAP":0.591},{"wk":1,"win":12,"lose":1,"score":"5-4","cat":"REB","a":192.0,"b":190.0,"z":0.061,"flip":"loss","winAP":0.5,"loseAP":0.636},{"wk":12,"win":9,"lose":11,"score":"5-3-1","cat":"PTS","a":737.0,"b":729.0,"z":0.073,"flip":"tie","winAP":0.818,"loseAP":0.727},{"wk":2,"win":10,"lose":3,"score":"5-4","cat":"AST","a":158.0,"b":155.0,"z":0.102,"flip":"loss","winAP":0.818,"loseAP":0.727},{"wk":12,"win":10,"lose":4,"score":"5-3-1","cat":"STL","a":45.0,"b":44.0,"z":0.106,"flip":"tie","winAP":0.636,"loseAP":0.364},{"wk":16,"win":9,"lose":3,"score":"5-4","cat":"PTS","a":479.0,"b":462.0,"z":0.137,"flip":"loss","winAP":0.273,"loseAP":0.273}],"cats":["PTS","REB","AST","STL","BLK","3PM","FG%","FT%","TO"]}}}
+;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const f1=x=>(Math.round(x*10)/10).toFixed(1).replace(/\.0$/,'');
+const sgn=x=>(x>0?'+':x<0?'−':'')+f1(Math.abs(x));
+const rec=t=>t.w+'-'+t.l+(t.t?'-'+t.t:'');
+let cur='2027';
+try{const s=localStorage.getItem('season'); if(s&&DATA.seasons[s]) cur=s;}catch(e){}
+
+function render(){
+  const S=DATA.seasons[cur], T=S.teams, byId=Object.fromEntries(T.map(t=>[t.id,t])), n=S.weeks.length;
+  $('eyebrow').textContent=DATA.league+' · Luck Report · '+S.label;
+  $('toggle').innerHTML=Object.keys(DATA.seasons).sort().reverse().map(k=>`<button type="button" id="tg-${k}" data-k="${k}" aria-pressed="${k===cur}">${DATA.seasons[k].label}</button>`).join('');
+  $('foot').textContent=`${S.label} regular season, weeks ${S.weeks[0]}–${S.weeks[n-1]} of ${S.regWeeks}. Source: ESPN league data. Updated ${DATA.updated}.`;
+
+  const byLuck=[...T].sort((a,b)=>b.luck-a.luck), top=byLuck[0], bot=byLuck[byLuck.length-1], best=[...T].sort((a,b)=>b.appct-a.appct)[0];
+  $('headline').innerHTML=
+    `<div class="hl"><span class="eyebrow">Luckiest</span><span class="big num">${sgn(top.luck)}</span><span class="who">${esc(top.name)}</span><span class="muted">${rec(top)} on the table, ${f1(top.xw)} wins deserved</span></div>`+
+    `<div class="hl"><span class="eyebrow">Unluckiest</span><span class="big num">${sgn(bot.luck)}</span><span class="who">${esc(bot.name)}</span><span class="muted">${rec(bot)} on the table, ${f1(bot.xw)} wins deserved</span></div>`+
+    `<div class="hl"><span class="eyebrow">Best team, schedule aside</span><span class="big num">${Math.round(best.appct*100)}%</span><span class="who">${esc(best.name)}</span><span class="muted">beat ${best.apw} of ${best.apw+best.apl+best.apt} possible opponents</span></div>`;
+
+  // standings slope
+  const act=[...T].sort((a,b)=>b.wins-a.wins||b.appct-a.appct), exp=[...T].sort((a,b)=>b.xw-a.xw);
+  const H=40, N=T.length;
+  const paths=act.map((t,i)=>{const j=exp.indexOf(t), y1=i*H+H/2, y2=j*H+H/2;
+    const col=j>i?'var(--warm)':j<i?'var(--cool)':'var(--line)';
+    return `<path pathLength="1" style="--i:${i};stroke:${col}" d="M0 ${y1} C 50 ${y1}, 50 ${y2}, 100 ${y2}"/>`}).join('');
+  $('slope').innerHTML=
+    `<div class="col"><div class="hd">Actual</div>${act.map((t,i)=>`<div class="srow"><span class="rk num">${i+1}</span><span class="nm">${esc(t.name)}</span><span class="rc num">${rec(t)}</span></div>`).join('')}</div>`+
+    `<svg viewBox="0 0 100 ${N*H}" height="${N*H}" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>`+
+    `<div class="col r"><div class="hd">Deserved</div>${exp.map((t,i)=>`<div class="srow"><span class="rk num" style="text-align:right">${i+1}</span><span class="nm">${esc(t.name)}</span><span class="rc num">${f1(t.xw)} xW</span></div>`).join('')}</div>`;
+
+  // luck bars
+  const mx=Math.max(...T.map(t=>Math.abs(t.luck)),0.5)*1.25;
+  $('luck').innerHTML=byLuck.map((t,i)=>{const w=Math.abs(t.luck)/mx*50, pos=t.luck>=0;
+    const lab=pos?`left:calc(50% + ${w}%)`:`right:calc(50% + ${w}%)`;
+    return `<div class="lrow" tabindex="0" data-tip="${esc(t.name)}: ${rec(t)} actual, ${f1(t.xw)} expected wins"><span class="nm">${esc(t.name)}</span><div class="track"><div class="bar ${pos?'pos':'neg'}" style="--i:${i};width:${w}%"></div><span class="bval num" style="--i:${i};${lab}">${sgn(t.luck)}</span></div></div>`}).join('')+
+    `<div class="axis"><span></span><div><span>← unlucky</span><span>lucky →</span></div></div>`;
+
+  let k=0;
+  // weeks grid
+  k=0;
+  $('weeks').innerHTML=`<thead><tr><th></th>${S.weeks.map(w=>`<th>W${w}</th>`).join('')}</tr></thead><tbody>`+
+    act.map(t=>`<tr><th title="${esc(t.name)}">${esc(t.name)}</th>${t.weeks.map(x=>{const p=(x.aw+.5*x.at)/11, r=x.r===1?'W':x.r===0?'L':'T';
+      const cls=x.r===1&&p<.4?' gift':x.r===0&&p>.6?' rob':'';
+      const sc=x.cw+'-'+x.cl+(x.ct?'-'+x.ct:'');
+      return `<td class="num${cls}" tabindex="0" style="--i:${k++};background:color-mix(in srgb, var(--seq) ${Math.round(4+p*46)}%, var(--panel))" data-tip="Week ${x.wk}: ${r==='W'?'beat':r==='L'?'lost to':'tied'} ${esc(byId[x.opp].name)} ${sc}. Would have beaten ${x.aw} of 11 teams.">${x.aw}<small>${r}</small></td>`}).join('')}</tr>`).join('')+`</tbody>`;
+
+  // close calls
+  const fmt=(c,v)=>c.endsWith('%')?(v*100).toFixed(1)+'%':String(v);
+  $('close').innerHTML=S.close.slice(0,6).map((c,i)=>{let a=fmt(c.cat,c.a), b=fmt(c.cat,c.b); if(a===b){a=(c.a*100).toFixed(2)+'%';b=(c.b*100).toFixed(2)+'%'}
+    return `<div class="panel call reveal" style="--i:${i%4}"><div class="hd"><span>Week ${c.wk}</span><span class="num">${c.score}</span></div>
+      <span><b>${esc(byId[c.win].name)}</b> over ${esc(byId[c.lose].name)}</span>
+      <span class="muted"><b style="color:var(--ink)">${c.cat}</b> <span class="num">${a} to ${b}</span>. Flip it: ${c.flip}.</span></div>`}).join('')
+    || '<p class="muted">No one-category matchups yet.</p>';
+
+  // team cards
+  const rank={}; S.cats.forEach(c=>{const o=[...T].sort((a,b)=>b.cat[c]-a.cat[c]); rank[c]={}; o.forEach((t,i)=>{rank[c][t.id]=(i>0&&o[i-1].cat[c]===t.cat[c])?rank[c][o[i-1].id]:i+1})});
+  $('teams').innerHTML=act.map((t,i)=>{const ws=[...t.weeks].sort((a,b)=>b.aw-a.aw), bw=ws[0], ww=ws[ws.length-1];
+    const col=t.luck>0.05?'var(--warm)':t.luck<-0.05?'var(--cool)':'var(--muted)';
+    return `<div class="panel team reveal" style="--i:${i%3}"><div class="top"><h3>${esc(t.name)}</h3><span class="chip num"><i class="dot" style="background:${col}"></i>luck ${sgn(t.luck)}</span></div>
+      <div class="kv"><span><b class="num">${rec(t)}</b>record</span><span><b class="num">${f1(t.xw)}</b>expected wins</span><span><b class="num">${Math.round(t.oppStr*100)}%</b>opponent strength</span></div>
+      <div class="dna">${S.cats.map((c,j)=>{const r=rank[c][t.id]; return `<div tabindex="0" data-tip="${c}: ranked ${r} of ${T.length}. Would win it vs ${Math.round(t.cat[c]*100)}% of the league; won it in ${Math.round(t.catActual[c]*100)}% of real matchups"><b class="num${r<=3?' top':''}">${r}</b><i style="--i:${j};height:${Math.max(2,Math.round(t.cat[c]*66))}px"></i>${c}</div>`}).join('')}</div>
+      <span class="note">Best week: W${bw.wk} (beat ${bw.aw} of 11). Worst: W${ww.wk} (beat ${ww.aw}).</span></div>`}).join('');
+  observe();
+}
+
+let io;
+function observe(){
+  const els=document.querySelectorAll('.reveal');
+  if(!('IntersectionObserver' in window)) return;
+  if(io) io.disconnect();
+  io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+  els.forEach(el=>{el.classList.remove('in'); void el.offsetWidth; io.observe(el)});
+}
+$('toggle').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b||b.dataset.k===cur) return; cur=b.dataset.k; try{localStorage.setItem('season',cur)}catch(e){} render(); const nb=$('tg-'+cur); if(nb) nb.focus()});
+
+// tooltip
+const tip=$('tip');
+function showTip(el,x,y){tip.textContent=el.dataset.tip; tip.hidden=false; const r=tip.getBoundingClientRect();
+  tip.style.left=Math.max(8,Math.min(x-r.width/2,innerWidth-r.width-8))+'px'; tip.style.top=(y-r.height-12<8?y+18:y-r.height-12)+'px'}
+document.addEventListener('pointermove',e=>{const el=e.target.closest&&e.target.closest('[data-tip]'); if(el) showTip(el,e.clientX,e.clientY); else tip.hidden=true});
+document.addEventListener('focusin',e=>{const el=e.target.closest&&e.target.closest('[data-tip]'); if(el){const r=el.getBoundingClientRect(); showTip(el,r.left+r.width/2,r.top)} else tip.hidden=true});
+document.addEventListener('scroll',()=>{tip.hidden=true},{passive:true});
+render();
+</script>
+
+</body></html>
